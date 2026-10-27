@@ -2,32 +2,444 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Banking Analytics Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Transaction Analysis System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 30px; background-color: #f4f6f9; }
-        .container { display: flex; flex-direction: column; align-items: center; gap: 30px; }
-        .card { background: white; padding: 20px; border-radius: 8px; width: 80%; max-width: 800px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); }
-        img { max-width: 100%; height: auto; border-radius: 4px; margin-top: 15px; }
+        :root {
+            --primary: #1e293b;
+            --secondary: #3b82f6;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 270px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow-x: hidden;
+            z-index: 100;
+        }
+        .sidebar.collapsed { width: 0; padding: 0; }
+        .sidebar h2 { font-size: 18px; margin-bottom: 30px; text-align: center; color: #60a5fa; letter-spacing: 0.5px; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; font-weight: 500; transition: all 0.2s ease; display: block; }
+        .sidebar a:hover, .sidebar a.active { background-color: var(--secondary); color: white; }
+
+        /* Main Content Area */
+        .main-content { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 30px; transition: all 0.3s ease; }
+
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 20px 30px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header h1 { font-size: 22px; color: var(--primary); }
+        .header p { font-size: 13px; color: #64748b; }
+
+        /* Toggle Menu Button */
+        .toggle-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; color: var(--primary); transition: background 0.2s; }
+        .toggle-btn:hover { background: #cbd5e1; }
+
+        /* Tab Content Sections */
+        .tab-section { display: none; flex-direction: column; gap: 30px; }
+        .tab-section.active { display: flex; }
+
+        /* Cards Layout */
+        .card { background: var(--card-bg); padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h2 { margin-bottom: 15px; font-size: 18px; color: var(--primary); border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+
+        /* Charts Grid */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @media (max-width: 1100px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-container { text-align: center; }
+        .chart-container img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; border: 1px solid #e2e8f0; }
+
+        /* Tables Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f1f5f9; color: var(--primary); font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
+        .deposit { color: var(--success); font-weight: bold; }
+        .withdrawal { color: var(--danger); font-weight: bold; }
+
+        /* Form Styling */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: var(--primary); }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--secondary); }
+
+        /* Action Buttons */
+        .btn { background-color: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .btn:hover { background-color: #2563eb; }
+        .alert { margin-top: 15px; padding: 10px; border-radius: 6px; font-size: 14px; display: none; }
+        .alert.success { background-color: #d1fae5; color: #065f46; display: block; }
+        .alert.error { background-color: #fee2e2; color: #991b1b; display: block; }
     </style>
 </head>
 <body>
 
-    <h1>Banking Transaction Analysis Dashboard</h1>
-    <p>Powered by Flask, MySQL, Pandas, and Matplotlib</p>
-
-    <div class="container">
-        <!-- Chart 1: Overall Summary -->
-        <div class="card">
-            <h2>Overall Deposits vs Withdrawals</h2>
-            <img src="{{ url_for('static', filename='transaction_chart.png') }}" alt="Overall Transaction Chart">
-        </div>
-
-        <!-- Chart 2: Customer-Specific Breakdown -->
-        <div class="card">
-            <h2>Customer-Specific Transaction Breakdown</h2>
-            <img src="{{ url_for('static', filename='customer_transaction_chart.png') }}" alt="Customer Transaction Chart">
-        </div>
+    <!-- SIDEBAR NAVIGATION -->
+    <div id="sidebar" class="sidebar">
+        <h2>Bank Management</h2>
+        <a href="#" class="nav-link active" onclick="switchTab(event, 'dashboard-tab')">📊 Dashboard Overview</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'analytics-tab')">📈 Analytics & Graphs</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'customers-tab')">👥 Customers Data</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'accounts-tab')">💳 Accounts Data</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'transactions-tab')">📜 All Transactions</a>
+        <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0;">
+        <a href="#" class="nav-link" onclick="switchTab(event, 'add-customer-tab')">➕ Add New Customer</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'add-transaction-tab')">➕ Add New Transaction</a>
+        <a href="#" class="nav-link" onclick="switchTab(event, 'remove-customer-tab')">🗑️ Remove Customer</a>
     </div>
 
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-content">
+
+        <!-- Top Banner with Toggle Button -->
+        <div class="header">
+            <div class="header-left">
+                <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+                <div>
+                    <h1>Banking Transaction Analysis System</h1>
+                    <p>Real-time database administration powered by Python, Flask, MySQL & Pandas.</p>
+                </div>
+            </div>
+            <button class="btn" onclick="location.reload()">🔄 Refresh Page</button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW (Recent Transactions Table) -->
+        <div id="dashboard-tab" class="tab-section active">
+            <div class="card">
+                <h2>Recent Customer Transactions (Live Database Feed)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer Name</th>
+                            <th>Account Type</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount ($)</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if transactions %}
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ tx.transaction_id }}</td>
+                                <td>{{ tx.name }}</td>
+                                <td>{{ tx.account_type }}</td>
+                                <td>{{ tx.transaction_date.strftime('%Y-%m-%d') if tx.transaction_date else '' }}</td>
+                                <td class="{{ 'deposit' if tx.transaction_type == 'DEPOSIT' else 'withdrawal' }}">
+                                    {{ tx.transaction_type }}
+                                </td>
+                                <td>${{ "%.2f"|format(tx.amount) }}</td>
+                                <td>{{ tx.description or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center;">No transactions found.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: ANALYTICS & GRAPHS -->
+        <div id="analytics-tab" class="tab-section">
+            <div class="charts-grid">
+                <div class="card chart-container">
+                    <h2>Overall Deposits vs Withdrawals</h2>
+                    <img src="{{ url_for('static', filename='transaction_chart.png') }}" alt="Overall Chart">
+                </div>
+                <div class="card chart-container">
+                    <h2>Customer-Specific Breakdown</h2>
+                    <img src="{{ url_for('static', filename='customer_transaction_chart.png') }}" alt="Customer Chart">
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CUSTOMERS DATA -->
+        <div id="customers-tab" class="tab-section">
+            <div class="card">
+                <h2>Registered Bank Customers</h2>
+                <div id="customers-content">Loading customer data...</div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ACCOUNTS DATA -->
+        <div id="accounts-tab" class="tab-section">
+            <div class="card">
+                <h2>Bank Accounts Overview</h2>
+                <div id="accounts-content">Loading accounts data...</div>
+            </div>
+        </div>
+
+        <!-- TAB 5: ALL TRANSACTIONS -->
+        <div id="transactions-tab" class="tab-section">
+            <div class="card">
+                <h2>Complete Transaction History</h2>
+                <div id="transactions-content">Loading full transaction data...</div>
+            </div>
+        </div>
+
+        <!-- TAB 6: ADD NEW CUSTOMER & ACCOUNT FORM -->
+        <div id="add-customer-tab" class="tab-section">
+            <div class="card" style="max-width: 500px; margin: 0 auto; width: 100%;">
+                <h2>Add New Customer & Unique Account</h2>
+                <form id="customer-form" onsubmit="submitCustomer(event)">
+                    <div class="form-group">
+                        <label for="customer_name">Customer Full Name</label>
+                        <input type="text" id="customer_name" required placeholder="Enter customer name">
+                    </div>
+                    <div class="form-group">
+                        <label for="account_type">Select Account Type</label>
+                        <select id="account_type" required>
+                            <option value="" disabled selected>Select account type</option>
+                            <option value="SAVINGS">SAVINGS</option>
+                            <option value="CURRENT">CURRENT</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Save to Database</button>
+                </form>
+                <div id="customer-alert" class="alert"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: ADD NEW TRANSACTION FORM -->
+        <div id="add-transaction-tab" class="tab-section">
+            <div class="card" style="max-width: 500px; margin: 0 auto; width: 100%;">
+                <h2>Add New Transaction to Database</h2>
+                <form id="transaction-form" onsubmit="submitTransaction(event)">
+                    <div class="form-group">
+                        <label for="tx_account_id">Account ID</label>
+                        <input type="number" id="tx_account_id" required placeholder="e.g. 1">
+                    </div>
+                    <div class="form-group">
+                        <label for="tx_date">Transaction Date</label>
+                        <input type="date" id="tx_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tx_type">Transaction Type</label>
+                        <select id="tx_type" required>
+                            <option value="DEPOSIT">DEPOSIT</option>
+                            <option value="WITHDRAWAL">WITHDRAWAL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tx_amount">Amount ($)</label>
+                        <input type="number" step="0.01" id="tx_amount" required placeholder="e.g. 500.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="tx_desc">Description</label>
+                        <input type="text" id="tx_desc" placeholder="e.g. Salary credit">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">Save to Database</button>
+                </form>
+                <div id="transaction-alert" class="alert"></div>
+            </div>
+        </div>
+
+        <!-- TAB 8: REMOVE CUSTOMER FORM -->
+        <div id="remove-customer-tab" class="tab-section">
+            <div class="card" style="max-width: 500px; margin: 0 auto; width: 100%;">
+                <h2>Remove Customer by Account ID</h2>
+                <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Entering an Account ID will permanently delete the customer, all their accounts, and every associated transaction.</p>
+                <form id="remove-customer-form" onsubmit="removeCustomer(event)">
+                    <div class="form-group">
+                        <label for="remove_account_id">Account ID</label>
+                        <input type="number" id="remove_account_id" required placeholder="Enter account ID (e.g. 1)">
+                    </div>
+                    <button type="submit" class="btn" style="background-color: var(--danger); width: 100%;">Delete Customer & All Data</button>
+                </form>
+                <div id="remove-alert" class="alert"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Handling UI Toggles, Forms, & Database Sync -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        function switchTab(event, tabId) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.tab-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'customers-tab' && document.getElementById('customers-content').innerHTML.includes('Loading')) {
+                fetchData('/customers', 'customers-content', ['customer_id', 'name']);
+            } else if (tabId === 'accounts-tab' && document.getElementById('accounts-content').innerHTML.includes('Loading')) {
+                fetchData('/customers/accounts', 'accounts-content', ['account_id', 'customer_id', 'account_type']);
+            } else if (tabId === 'transactions-tab' && document.getElementById('transactions-content').innerHTML.includes('Loading')) {
+                fetchData('/customers/transactions', 'transactions-content', ['customer_id', 'name', 'account_type', 'transaction_type', 'amount']);
+            }
+        }
+
+        function fetchData(url, containerId, columns) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        document.getElementById(containerId).innerHTML = "<p>No records found.</p>";
+                        return;
+                    }
+                    let html = `<table><thead><tr>`;
+                    columns.forEach(col => html += `<th>${col.replace('_', ' ').toUpperCase()}</th>`);
+                    html += `</tr></thead><tbody>`;
+
+                    data.forEach(row => {
+                        html += `<tr>`;
+                        columns.forEach(col => {
+                            let val = row[col] !== undefined ? row[col] : '-';
+                            if(col === 'amount') val = '$' + parseFloat(val).toFixed(2);
+                            html += `<td>${val}</td>`;
+                        });
+                        html += `</tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    document.getElementById(containerId).innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById(containerId).innerHTML = `<p style="color:red;">Failed to load data.</p>`;
+                });
+        }
+
+        async function submitCustomer(event) {
+            event.preventDefault();
+            const name = document.getElementById('customer_name').value;
+            const accountType = document.getElementById('account_type').value;
+            const alertBox = document.getElementById('customer-alert');
+
+            const payload = {
+                name: name,
+                account_type: accountType
+            };
+
+            try {
+                const res = await fetch('/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.status === 201) {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = 'Customer & account added successfully! Regenerating charts...';
+                    document.getElementById('customer-form').reset();
+
+                    await fetch('/generate-customer-chart');
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.error || 'Failed to add customer.';
+                }
+            } catch (err) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Network error occurred.';
+            }
+        }
+
+        async function submitTransaction(event) {
+            event.preventDefault();
+            const payload = {
+                account_id: parseInt(document.getElementById('tx_account_id').value),
+                transaction_date: document.getElementById('tx_date').value,
+                transaction_type: document.getElementById('tx_type').value,
+                amount: parseFloat(document.getElementById('tx_amount').value),
+                description: document.getElementById('tx_desc').value
+            };
+            const alertBox = document.getElementById('transaction-alert');
+
+            try {
+                const res = await fetch('/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.status === 201) {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = 'Transaction saved! Rebuilding visual charts...';
+                    document.getElementById('transaction-form').reset();
+
+                    await fetch('/generate-chart');
+                    await fetch('/generate-customer-chart');
+
+                    alertBox.innerText = 'Database updated & charts refreshed! Reloading...';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.error || 'Failed to add transaction.';
+                }
+            } catch (err) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Network error occurred.';
+            }
+        }
+
+        async function removeCustomer(event) {
+            event.preventDefault();
+            const accountId = parseInt(document.getElementById('remove_account_id').value);
+            const alertBox = document.getElementById('remove-alert');
+
+            if (!confirm("Are you sure you want to delete this customer, their accounts, and all transaction records? This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const res = await fetch('/customers/delete-by-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: accountId })
+                });
+                const data = await res.json();
+
+                if (res.status === 200) {
+                    alertBox.className = 'alert success';
+                    alertBox.innerText = data.message + ' Rebuilding charts...';
+                    document.getElementById('remove-customer-form').reset();
+
+                    await fetch('/generate-chart');
+                    await fetch('/generate-customer-chart');
+
+                    alertBox.innerText = 'Database updated & charts refreshed! Reloading dashboard...';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alertBox.className = 'alert error';
+                    alertBox.innerText = data.error || 'Failed to remove customer.';
+                }
+            } catch (err) {
+                alertBox.className = 'alert error';
+                alertBox.innerText = 'Network error occurred.';
+            }
+        }
+    </script>
 </body>
 </html>
