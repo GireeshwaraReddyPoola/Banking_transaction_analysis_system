@@ -1,0 +1,15 @@
+# Flask Web Framework
+flask==3.0.2
+
+# MySQL Database Connector
+mysql-connector-python==8.3.0
+
+# Data Science & Tabular Processing
+pandas==2.2.1
+numpy==1.26.4
+
+# Data Visualization & Graph Rendering
+matplotlib==3.8.3
+
+# HTTP Client (for API testing scripts)
+requests==2.31.0
