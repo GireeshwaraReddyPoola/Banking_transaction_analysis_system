@@ -2,7 +2,7 @@
 
 A Flask web application backed by MySQL that stores customers, accounts and transactions (synthetic data only), exposes them through a REST-style API, and visualises deposits vs. withdrawals using Pandas and Matplotlib. It includes a single-page admin dashboard for viewing data, adding customers/transactions, and removing customers.
 
-> **Python Group Project 16** – Banking Transaction Analysis System
+> 
 
 ---
 
